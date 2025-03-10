@@ -163,8 +163,7 @@ public class Assignments1 : TestHelper
                 FROM beer 
                 JOIN sells ON sells.BeerId = beer.BeerId 
                 JOIN cafe ON cafe.CafeId = sells.CafeId 
-                
-                ORDER BY beer.Name DESC";
+                ORDER BY cafe.Name, beer.Name";
         
         using var connection = DbHelper.GetConnection();
         return connection.Query<CafeBeer>(sql).ToList();
