@@ -1,14 +1,14 @@
 ﻿[
   {
-    CafeName: AFFOURTIT,
-    Beers: ABBAYE DE ROCS NOEL
+    CafeName: BAR MENEER JANSEN,
+    Beers: ZYWIEC PORTER
   },
   {
-    CafeName: AFFOURTIT,
-    Beers: BLONDINE
+    CafeName: PASSE PARTOUT,
+    Beers: ZYWIEC PORTER
   },
   {
-    CafeName: AFFOURTIT,
-    Beers: OLD JOCK
+    CafeName: BOERKE VERSCHUREN,
+    Beers: ZYWIEC PORTER
   }
 ]

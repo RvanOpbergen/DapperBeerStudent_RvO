@@ -70,17 +70,29 @@ public class Assignments1 : TestHelper
     // @Country is een query parameter placeholder.
     public static List<Beer> GetAllBeersSortedByNameForCountry(string country)
     {
-        throw new NotImplementedException();
+        string sql =
+            @"  SELECT BeerId, Beer.Name, Type, Style, Alcohol, Beer.BrewerId 
+                From Beer
+                INNER JOIN Brewer ON Beer.BrewerId = Brewer.BrewerId
+                WHERE brewer.Country = @Country
+                ORDER BY Name ASC";
+        
+        using var connection = DbHelper.GetConnection();
+        var beers = connection.Query<Beer>(sql, new { Country = country }).ToList();
+        return beers;
     }
     
     // 1.4 Question
     // Tel het aantal brouwerijen. Welke methode van Dapper gebruik je (niet Query<Brewer>)?
     // Een handige website om te kijken is:
-    // https://www.learndapper.com/
+    // https://www.learndappeNr.com/
     // Voor deze vraag kijken specifiek naar deze pagina: https://www.learndapper.com/dapper-query
     public static int CountBrewers()
     {
-        throw new NotImplementedException();
+        var sql = @"SELECT Count(BrewerId) FROM Brewer";
+        
+        using var connection = DbHelper.GetConnection();
+        return connection.QuerySingle<int>(sql);
     }
     
     // 1.5 Question
@@ -93,7 +105,10 @@ public class Assignments1 : TestHelper
     // voor Queries die net overeenkomen met de database tabellen.
     public static List<NumberOfBrewersByCountry> NumberOfBrewersByCountry()
     {
-        throw new NotImplementedException();
+        var sql = @"SELECT Count(BrewerId) AS NumberOfBreweries, Country From Brewer GROUP BY Country ORDER BY Count(BrewerId) DESC";
+        
+        using var connection = DbHelper.GetConnection();
+        return connection.Query<NumberOfBrewersByCountry>(sql).ToList();
     }
     
     // 1.6 Question
@@ -101,7 +116,10 @@ public class Assignments1 : TestHelper
     // Je kan in MySQL de LIMIT 1 gebruiken om 1 record terug te krijgen.
     public static Beer GetBeerWithMostAlcohol()
     {
-        throw new NotImplementedException();
+        var sql = @"SELECT BeerId, Name, Type, Style, Alcohol, BrewerId FROM beer ORDER BY Alcohol DESC LIMIT 1";
+        
+        using var connection = DbHelper.GetConnection();
+        return connection.QuerySingle<Beer>(sql);
     }
     
     // 1.7 Question
@@ -111,14 +129,27 @@ public class Assignments1 : TestHelper
     // indien de brouwerij niet bestaat voor een bepaalde brewerId.
     public static Brewer? GetBreweryByBrewerId(int brewerId)
     {
-        throw new NotImplementedException();
+        var sql = @"
+                SELECT BrewerId, Name, Country 
+                FROM brewer 
+                WHERE BrewerId = @BrewerId";
+        
+        using var connection = DbHelper.GetConnection();
+        return connection.QuerySingleOrDefault<Brewer>(sql, new { brewerId = brewerId });
     }
     
     // 1.8 Question
     // Gegeven de BrewerId, geef een overzicht van alle bieren van de brouwerij gesorteerd bij alcohol percentage.
     public static List<Beer> GetAllBeersByBreweryId(int brewerId)
     {
-        throw new NotImplementedException();
+        var sql = @"    
+                SELECT BeerId, Name, Type, Style, Alcohol, BrewerId 
+                FROM beer 
+                WHERE BrewerId = @BrewerId 
+                ORDER BY Alcohol ASC";
+        
+        using var connection = DbHelper.GetConnection();
+        return connection.Query<Beer>(sql, new { BrewerId = brewerId }).ToList();
     }
     
     // 1.9 Question
@@ -126,7 +157,18 @@ public class Assignments1 : TestHelper
     // Gebruik hiervoor de class CafeBeer (directory DTO). 
     public static List<CafeBeer> GetCafeBeers()
     {
-        throw new NotImplementedException();
+        var sql = @"
+                SELECT cafe.Name AS CafeName, beer.Name AS Beers 
+                FROM beer 
+                JOIN sells ON sells.BeerId = beer.BeerId 
+                JOIN cafe ON cafe.CafeId = sells.CafeId 
+                
+                ORDER BY beer.Name DESC";
+        
+        using var connection = DbHelper.GetConnection();
+        return connection.Query<CafeBeer>(sql).ToList();
+        
+        //GROUP BY beer.Name, cafe.Name
     }
     
     // De vorige 1.10 Question heb ik verwijderd, deze was nogal lastig
@@ -135,7 +177,13 @@ public class Assignments1 : TestHelper
     // Geef de gemiddelde waardering (score in de tabel Review) van een biertje terug gegeven de BeerId.
     public static decimal GetBeerRating(int beerId)
     {
-        throw new NotImplementedException();
+        var sql = @"
+                SELECT AVG(Score)
+                FROM review
+                WHERE BeerId = @BeerId";
+        
+        using var connection = DbHelper.GetConnection();
+        return connection.QueryFirstOrDefault<decimal>(sql, new { BeerId = beerId });
     }
     
     // 1.11 Question
@@ -143,7 +191,11 @@ public class Assignments1 : TestHelper
     // De test werkt alleen als de vorige vraag ook correct is gemaakt.
     public static void InsertReview(int beerId, decimal score)
     {
-        throw new NotImplementedException();
+        var sql = @"
+                INSERT INTO REVIEW (BeerId, Score)
+                VALUES (@BeerId, @Score)";
+        using var connection = DbHelper.GetConnection();
+        connection.Execute(sql, new { BeerId = beerId, Score = score });
     }
     
     // 1.12 Question
@@ -151,7 +203,13 @@ public class Assignments1 : TestHelper
     // Deze test werkt alleen decimal GetBeerRating(int beerId) methode correct is (twee vragen hiervoor).
     public static int InsertReviewReturnsReviewId(int beerId, decimal score)
     {
-        throw new NotImplementedException();
+        var sql = @"
+                Insert into REVIEW (BeerId, Score)
+                VALUES (@BeerId, @Score);
+                SELECT LAST_INSERT_ID()";
+        
+        using var connection = DbHelper.GetConnection();
+        return connection.QuerySingle<int>(sql, new { BeerId = beerId, Score = score });
     }
     
     // twee methoden verwijderd
