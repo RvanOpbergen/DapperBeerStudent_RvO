@@ -2,6 +2,7 @@ using System.Data;
 using Dapper;
 using DapperBeer.DTO;
 using DapperBeer.Model;
+using MySqlConnector;
 using SqlKata;
 
 namespace DapperBeer;
@@ -29,7 +30,16 @@ public class Assignments2
     // !!!DOE DIT NOOIT MEER SVP!!!!
     public static List<string> GetBeersByCountryWithSqlInjection(string country)
     {
-        throw new NotImplementedException();
+        var connection = DbHelper.GetConnection();
+        string sql = @$"
+                SELECT  beer.Name, brewer.Country
+                FROM  beer
+                JOIN brewer on beer.BrewerId = brewer.BrewerId
+                WHERE Country = '{country}'";
+        
+        List<string> result1 = connection.Query<string>(sql).ToList();
+        return result1;
+        
     }
     
     // 2.2 Question
@@ -42,7 +52,17 @@ public class Assignments2
     // Dit betekent dus dat country null kan zijn.
     public static List<string> GetAllBeersByCountry(string? country)
     {
-        throw new NotImplementedException();
+        var sql = @$"
+                SELECT beer.Name, brewer.Country 
+                FROM Beer 
+                JOIN brewer on beer.BrewerId = brewer.BrewerId
+                WHERE @Country IS NULL OR Country = @country
+                ORDER BY beer.Name";
+        // throw new NotImplementedException();
+        
+        var connection = DbHelper.GetConnection();
+        List<string> result2 = connection.Query<string>(sql, new{country}).ToList();
+        return result2;
     }
     
     // 2.3 Question
@@ -52,7 +72,17 @@ public class Assignments2
     // Gebruikt <= (kleiner of gelijk aan) voor de vergelijking van het minAlcohol.
     public static List<string> GetAllBeersByCountryAndMinAlcohol(string? country = null, decimal? minAlcohol = null)
     {
-        throw new NotImplementedException();
+        var sql = @$"
+                SELECT beer.Name, brewer.Country, beer.Alcohol 
+                FROM Beer 
+                JOIN brewer on beer.BrewerId = brewer.BrewerId
+                WHERE (@Country IS NULL OR Country = @country) AND (@minAlcohol IS NULL OR Alcohol >= @minAlcohol)
+                ORDER BY beer.Name";
+        // throw new NotImplementedException();
+        
+        var connection = DbHelper.GetConnection();
+        List<string> result3 = connection.Query<string>(sql, new{country, minAlcohol}).ToList();
+        return result3;
     }
     
     // 2.4 Question
@@ -112,7 +142,23 @@ public class Assignments2
     // Gebruik de klasse BrewerBeerBrewmaster om de resultaten in op te slaan. (directory DTO).
     public static List<BrewerBeerBrewmaster> GetAllBeerNamesWithBreweryAndBrewmaster()
     {
-        throw new NotImplementedException();
+        string sql = $@"
+                SELECT beer.Name as BeerName, brewer.Name as BrewerName, brewmaster.Name as BrewmasterName
+                FROM beer
+                LEFT JOIN brewer
+                ON beer.BrewerId = brewer.BrewerId
+                LEFT JOIN brewmaster
+                ON brewer.BrewerId = brewmaster.BrewerId
+                WHERE brewmaster.Name IS NOT NULL
+                ORDER BY beer.Name";
+        
+            // JOIN op de koppeltabel kan ook, dan hoef je geen 2x een INNER JOIN te doen
+        
+        var connection = DbHelper.GetConnection();
+        List<BrewerBeerBrewmaster> result5 = connection.Query<BrewerBeerBrewmaster>(sql).ToList();
+        return result5;
+        
+        // throw new NotImplementedException();
     }
     
     // 2.6 Question
@@ -138,18 +184,63 @@ public class Assignments2
     }
     public static List<Beer> GetBeersByCountryAndType(BeerFilter filter)
     {
-        using IDbConnection connection = DbHelper.GetConnection();
-        string sql = $"""
-                      SELECT beer.BeerId, beer.Name, beer.Type, beer.Style, beer.Alcohol, beer.BrewerId
-                      FROM Beer beer 
-                           JOIN Brewer brewer ON beer.BrewerId = brewer.BrewerId
+ //       using IDbConnection connection = DbHelper.GetConnection();
+ //       string sql = @"
+ //                     SELECT beer.*
+ //                     FROM Beer beer 
+ //                          JOIN Brewer brewer ON beer.BrewerId = brewer.BrewerId
                       /**where**/
+//                      WHERE brewer.Country IS NULL OR brewer.Country = @filter.Country AND beer.Type = @filter.Type
                       /**orderby**/
+//                     ORDER BY beer.Name
+//                      LIMIT @filter.PageSize OFFSET @filter.Offset";
+//        var result = connection.Query<Beer>(sql,filter).ToList();
+//        return result;
+        
+        using IDbConnection connection = DbHelper.GetConnection();
+        //alle parameters in de query, dus zonder sqlbuilder
+        string sql = $"""
+                      SELECT beer.*
+                      FROM Beer beer
+                           JOIN Brewer brewer ON beer.BrewerId = brewer.BrewerId
+                      /*Null check trucje in SQL*/
+                      WHERE (@Country IS NULL OR brewer.Country = @Country)
+                      /*Null check trucje in SQL*/
+                      AND (@Type IS NULL OR beer.Type = @Type)
+                      /*Hier moeten we string interpolatie gebruiken voor ORDER BY, omdat Dapper geen parameters accepteerd voor kolomnamen.
+                      Dit is wel gevoelig voor SQL-Injectie*/
+                      ORDER BY {filter.OrderBy}
                       LIMIT @PageSize OFFSET @Offset
                       """;
-        
-        SqlBuilder builder = new SqlBuilder();
+        var result = connection.Query<Beer>(sql, filter).ToList(); //hier geven we filter mee als parameter
 
-        throw new NotImplementedException();
+        // alternatief met SqlBuilder
+       
+//         string sql = $"""
+//                       SELECT beer.*
+//                       FROM Beer beer
+//                           JOIN Brewer brewer ON beer.BrewerId = brewer.BrewerId
+//                          /**where**/
+//                          /**orderby**/
+//                        LIMIT @PageSize OFFSET @Offset
+//                        """;
+//         
+//          SqlBuilder builder = new SqlBuilder();
+//          var queryTemplate = builder.AddTemplate(sql, filter); //hier geven we filter mee als parameter
+//         
+//          if(filter.Country != null)
+//          {
+//              builder.Where("brewer.Country = @Country");
+//          }
+//          if(filter.Type != null)
+//          {
+//              builder.Where("beer.Type = @Type");
+//          }
+//         
+//          builder.OrderBy(filter.OrderBy); //Hier gebruiken we string interpolatie, omdat Dapper geen parameters accepteerd voor kolomnamen
+//        
+//          var result = connection.Query<Beer>(queryTemplate.RawSql, queryTemplate.Parameters).ToList();
+        
+         return result;
     }
 }

@@ -34,7 +34,9 @@ public class Assignments3
     // Sorteer op naam.
     public static List<Brewmaster> GetAllBrewmastersWithBrewery()
     {
-        throw new NotImplementedException();
+        
+        
+        // throw new NotImplementedException();
     }
 
     // 3.3 Question
